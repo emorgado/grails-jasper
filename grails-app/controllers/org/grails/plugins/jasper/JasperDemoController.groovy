@@ -14,11 +14,11 @@
  *
  */
 
-package org.codehaus.groovy.grails.plugins.jasper
+package org.grails.plugins.jasper
 
 import java.text.SimpleDateFormat
 
-import org.codehaus.groovy.grails.plugins.jasper.demo.ExamplePersonForReport
+import org.grails.plugins.jasper.demo.ExamplePersonForReport;
 
 /*
  * @author mfpereira 2007

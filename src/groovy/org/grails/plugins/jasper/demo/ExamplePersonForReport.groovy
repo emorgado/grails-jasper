@@ -14,7 +14,7 @@
  * 
  */
 
-package org.codehaus.groovy.grails.plugins.jasper.demo
+package org.grails.plugins.jasper.demo
 
 /**
  * For demonstration purposes

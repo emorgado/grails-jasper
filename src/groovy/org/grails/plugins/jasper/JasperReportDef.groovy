@@ -14,13 +14,15 @@
  *
  */
 
-package org.codehaus.groovy.grails.plugins.jasper
+package org.grails.plugins.jasper
 
 import net.sf.jasperreports.engine.JRDataSource
 import net.sf.jasperreports.engine.JasperPrint
 
 import org.apache.commons.io.FilenameUtils
+
 import grails.util.Holders
+
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
 

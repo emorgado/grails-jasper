@@ -19,7 +19,8 @@ grails.project.dependency.resolution = {
     dependencies {
         compile('com.lowagie:itext:2.1.7')
 
-        compile('net.sf.jasperreports:jasperreports:5.6.1') {
+        compile 'net.sf.jasperreports:jasperreports-fonts:6.0.0'
+        compile('net.sf.jasperreports:jasperreports:6.5.1') {
             excludes 'antlr', 'commons-logging',
                      'ant', 'mondrian', 'commons-javaflow','barbecue', 'xml-apis-ext','xml-apis', 'xalan', 'groovy-all', 'hibernate', 'saaj-api', 'servlet-api',
                      'xercesImpl','xmlParserAPIs','spring-core','bsh', 'spring-beans', 'jaxen', 'barcode4j','batik-svg-dom','batik-xml','batik-awt-util','batik-dom',
@@ -27,7 +28,7 @@ grails.project.dependency.resolution = {
                      'bcmail-jdk14','bcprov-jdk14','bctsp-jdk14','xmlbeans', 'olap4j'
         }
 
-        compile('org.apache.poi:poi:3.10-FINAL')
+        compile('org.apache.poi:poi:3.17')
     }
 
     plugins {
@@ -38,7 +39,7 @@ grails.project.dependency.resolution = {
         test(":hibernate4:4.3.6.1") {
             export = false
         }
-        test(":tomcat:8.0.14.1") {
+        test(":tomcat:8.0.20"){
             export = false
         }
     }

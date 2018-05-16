@@ -13,28 +13,52 @@
  * limitations under the License.
  *
  */
-
- package org.codehaus.groovy.grails.plugins.jasper
+package org.grails.plugins.jasper
 
  import groovy.sql.Sql
 
 import java.lang.reflect.Field
 import java.sql.Connection
 
+import net.sf.jasperreports.engine.JRAbstractExporter
 import net.sf.jasperreports.engine.JRDataSource
-import net.sf.jasperreports.engine.JRExporter
-import net.sf.jasperreports.engine.JRExporterParameter
+import net.sf.jasperreports.engine.JRException
 import net.sf.jasperreports.engine.JasperCompileManager
 import net.sf.jasperreports.engine.JasperFillManager
 import net.sf.jasperreports.engine.JasperPrint
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource
-import net.sf.jasperreports.engine.export.JRHtmlExporterParameter
-import net.sf.jasperreports.engine.export.JRTextExporterParameter
-import net.sf.jasperreports.engine.export.JRXlsExporterParameter
-import net.sf.jasperreports.engine.util.JRProperties
+import net.sf.jasperreports.engine.export.HtmlExporter
+import net.sf.jasperreports.engine.export.JRCsvExporter
+import net.sf.jasperreports.engine.export.JRExporterContext
+import net.sf.jasperreports.engine.export.JRPdfExporter
+import net.sf.jasperreports.engine.export.JRRtfExporter
+import net.sf.jasperreports.engine.export.JRTextExporter
+import net.sf.jasperreports.engine.export.JRXlsExporter
+import net.sf.jasperreports.engine.export.JRXmlExporter
+import net.sf.jasperreports.engine.export.JsonExporter
+import net.sf.jasperreports.engine.export.oasis.JROdsExporter
+import net.sf.jasperreports.engine.export.oasis.JROdtExporter
+import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter
+import net.sf.jasperreports.engine.export.ooxml.JRPptxExporter
+import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter
+import net.sf.jasperreports.export.ExporterConfiguration
+import net.sf.jasperreports.export.ExporterOutput
+import net.sf.jasperreports.export.ReportExportConfiguration
+import net.sf.jasperreports.export.SimpleExporterInput
+import net.sf.jasperreports.export.SimpleHtmlExporterOutput
+import net.sf.jasperreports.export.SimpleHtmlReportConfiguration
+import net.sf.jasperreports.export.SimpleJsonExporterConfiguration
+import net.sf.jasperreports.export.SimpleJsonExporterOutput
+import net.sf.jasperreports.export.SimpleOutputStreamExporterOutput
+import net.sf.jasperreports.export.SimpleTextExporterConfiguration
+import net.sf.jasperreports.export.SimpleWriterExporterOutput
+import net.sf.jasperreports.export.SimpleXlsReportConfiguration
+import net.sf.jasperreports.export.SimpleXmlExporterOutput
 
+import org.grails.plugins.jasper.JasperExportFormat;
 import org.springframework.core.io.Resource
 import org.springframework.transaction.annotation.Transactional
+
 
 /**
  * Generates Jasper reports. Call one of the three generateReport methods to
@@ -55,7 +79,8 @@ class JasperService {
      * @param testModel
      * @return reportDef
      */
-    JasperReportDef buildReportDefinition(parameters, locale, testModel) {
+    JasperReportDef buildReportDefinition(Map<String, Object>parameters, locale, testModel) {
+        log.debug("buildReportDefinition")
         JasperReportDef reportDef = new JasperReportDef(name: parameters._file, parameters: parameters,locale: locale)
 
         reportDef.fileFormat = JasperExportFormat.determineFileFormat(parameters._format)
@@ -66,7 +91,7 @@ class JasperService {
         return reportDef
     }
 
-    private Collection getReportData(testModel, parameters) {
+    private Collection getReportData(testModel, Map<String, Object> parameters) {
         Collection reportData
 
         if (testModel?.data) {
@@ -108,21 +133,109 @@ class JasperService {
      * return ByteArrayOutStreamByteArrayOutStream with the generated Report
      */
     ByteArrayOutputStream generateReport(JasperReportDef reportDef) {
-        ByteArrayOutputStream byteArray = new ByteArrayOutputStream()
-        JRExporter exporter = generateExporter(reportDef)
-
-        exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, byteArray)
-        exporter.setParameter(JRExporterParameter.CHARACTER_ENCODING, "UTF-8")
-
-        def jasperPrint = reportDef.jasperPrinter
-        if (jasperPrint==null) {
+        log.info("generateReport " +reportDef)
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream(); 
+        
+                
+        if ( reportDef.jasperPrinter == null ) {
+            
             reportDef.jasperPrinter = generatePrinter(reportDef)
         }
-
-        exporter.setParameter(JRExporterParameter.JASPER_PRINT, reportDef.jasperPrinter)
-        exporter.exportReport()
-
-        return byteArray
+        log.debug( "jasperprint is null? "+ ( reportDef.jasperPrinter == null ) )
+                
+        JRAbstractExporter exporter = getExporter( reportDef.fileFormat, outStream, reportDef.jasperPrinter );
+        
+        /*/
+        JRAbstractExporter exporter = getExporter( reportDef.fileFormat );
+        exporter.setExporterInput( new SimpleExporterInput( reportDef.jasperPrinter ) );        
+        exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+        //*/
+        exporter.exportReport();
+        
+        return outStream
+    }
+    
+    private JRAbstractExporter getExporter( JasperExportFormat format, ByteArrayOutputStream outStream, JasperPrint jasperPrinter ){
+        
+        JRAbstractExporter exporter
+        
+        switch( format ){
+            case JasperExportFormat.PDF_FORMAT:
+                exporter = new JRPdfExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+                break; 
+            case JasperExportFormat.HTML_FORMAT:
+                exporter = new HtmlExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleHtmlExporterOutput( outStream ) );
+                break;
+            case JasperExportFormat.XML_FORMAT:
+                exporter = new JRXmlExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleXmlExporterOutput( outStream ) );
+                break;
+            case JasperExportFormat.CSV_FORMAT:
+                exporter = new JRCsvExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleWriterExporterOutput( outStream ) );
+                break;
+            case JasperExportFormat.XLS_FORMAT:
+                exporter = new JRXlsExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+                SimpleXlsReportConfiguration configuration = new SimpleXlsReportConfiguration();
+                configuration.setOnePagePerSheet(false);
+                exporter.setConfiguration(configuration);
+            break;
+            case JasperExportFormat.RTF_FORMAT:
+                exporter = new JRRtfExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+                break;
+            case JasperExportFormat.TEXT_FORMAT:
+                exporter = new JRTextExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+            break;
+            case JasperExportFormat.ODT_FORMAT:
+                exporter = new JROdtExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+                break;
+            case JasperExportFormat.ODS_FORMAT:
+                exporter = new JROdsExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+                break;
+            case JasperExportFormat.DOCX_FORMAT:
+                exporter = new JRDocxExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+                break;
+            case JasperExportFormat.XLSX_FORMAT:
+                exporter = new JRXlsxExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+                break;
+            case JasperExportFormat.PPTX_FORMAT:
+                exporter = new JRPptxExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+                break;
+            case JasperExportFormat.JSON_FORMAT:
+                exporter = new JsonExporter();
+                exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+                exporter.setExporterOutput( new SimpleJsonExporterOutput( outStream ) );
+                SimpleJsonExporterConfiguration configuration = new SimpleJsonExporterConfiguration();                
+                exporter.setConfiguration( configuration );
+                break;
+            default:
+                throw new JRException("Unknown report format: " + format );
+        }
+        
+        //exporter.setExporterInput( new SimpleExporterInput( jasperPrinter ) );
+        return exporter;
     }
 
     /**
@@ -133,18 +246,18 @@ class JasperService {
      * return ByteArrayOutStream with the generated Report
      */
     ByteArrayOutputStream generateReport(List<JasperReportDef> reports) {
-        ByteArrayOutputStream byteArray = new ByteArrayOutputStream()
-        JRExporter exporter = generateExporter(reports.first())
-
-        exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, byteArray)
-        exporter.setParameter(JRExporterParameter.CHARACTER_ENCODING, "UTF-8")
-
-        def printers = reports.collect { report -> generatePrinter(report) }
-        exporter.setParameter(JRExporterParameter.JASPER_PRINT_LIST, printers)
-
-        exporter.exportReport()
-
-        return byteArray
+        log.info("generateReport from report list")
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        
+        JRAbstractExporter exporter = getExporter( reports.first() );        
+        
+        List<JasperPrint> printers = reports.collect { report -> generatePrinter(report) }
+        
+        exporter.setExporterInput( new SimpleExporterInput( printers ) );
+        exporter.setExporterOutput( new SimpleOutputStreamExporterOutput( outStream ) );
+        exporter.exportReport();
+        
+        return outStream
     }
 
     /**
@@ -186,7 +299,7 @@ class JasperService {
      * @param reportDef
      * @return JRExporter
      */
-    private JRExporter generateExporter(JasperReportDef reportDef) {
+    private JRAbstractExporter generateExporter(JasperReportDef reportDef) {
         if (reportDef.parameters.SUBREPORT_DIR == null) {
             reportDef.parameters.SUBREPORT_DIR = reportDef.getFilePath()
         }
@@ -203,7 +316,7 @@ class JasperService {
             reportDef.parameters.REPORT_LOCALE = Locale.getDefault()
         }
 
-        JRExporter exporter = JasperExportFormat.getExporter(reportDef.fileFormat)
+        JRAbstractExporter exporter = JasperExportFormat.getExporter(reportDef.fileFormat)
         Field[] fields = JasperExportFormat.getExporterFields(reportDef.fileFormat)
 
         Boolean useDefaultParameters = reportDef.parameters.useDefaultParameters.equals("true")
@@ -225,33 +338,47 @@ class JasperService {
      * @return JasperPrint , jasperreport printer
      */
     private JasperPrint generatePrinter(JasperReportDef reportDef) {
-        JasperPrint jasperPrint
-        Resource resource = reportDef.getReport()
+        log.info("generatePrinter")
+        log.debug( "      reportDef null? " + reportDef == null )
+        log.debug( "    resource is null? " + reportDef?.getReport() == null )
+        log.debug( "jrDataSource is null? " + reportDef?.dataSource == null )
+        
+        JasperPrint  jasperPrint
+        Resource     resource = reportDef.getReport()
         JRDataSource jrDataSource = reportDef.dataSource
 
+        
         if (jrDataSource == null && reportDef.reportData != null && !reportDef.reportData.isEmpty()) {
+            log.debug( "no jrDataSource, reportData: "+( reportDef.reportData != null && !reportDef.reportData.isEmpty() ) )
             jrDataSource = new JRBeanCollectionDataSource(reportDef.reportData)
         }
 
         if (jrDataSource != null) {
+            
+            log.debug( "with jrDataSource" )
+            
             if (resource.getFilename().endsWith('.jasper')) {
+                log.debug( "is .jasper file" )
                 jasperPrint = JasperFillManager.fillReport(resource.inputStream, reportDef.parameters, jrDataSource)
-            }
-            else {
+                
+            } else {
+                log.debug( "is not a .jasper file" )
                 forceTempFolder()
+                
                 jasperPrint = JasperFillManager.fillReport(JasperCompileManager.compileReport(resource.inputStream), reportDef.parameters, jrDataSource)
             }
-        }
-        else {
-
+        } else {
+            log.debug( "sql Datasource" )
             Sql sql = new Sql(dataSource)
             Connection connection = dataSource?.getConnection()
 
             try {
                 if (resource.getFilename().endsWith('.jasper')) {
+                    log.debug( "is .jasper file" )
                     jasperPrint = JasperFillManager.fillReport(resource.inputStream, reportDef.parameters, connection)
                 }
                 else {
+                    log.debug( "is not a .jasper file" )
                     forceTempFolder()
                     jasperPrint = JasperFillManager.fillReport(JasperCompileManager.compileReport(resource.inputStream), reportDef.parameters,  connection)
                 }
@@ -261,7 +388,8 @@ class JasperService {
                 connection.close()
             }
         }
-
+        log.debug("printer generated?: " + (jasperPrint != null))
+        reportDef.jasperPrinter = jasperPrint
         return jasperPrint
     }
 
@@ -272,13 +400,16 @@ class JasperService {
      * @param exporter , the exporter object
      * @param parameter , the parameters to apply
      */
-    private void applyCustomParameters(Field[] fields, JRExporter exporter, Map<String, Object> parameters) {
+    private void applyCustomParameters(Field[] fields, JRAbstractExporter< ReportExportConfiguration, ExporterConfiguration, ExporterOutput, JRExporterContext > exporter, Map<String, Object> parameters) {
+        
         def fieldNames = fields.collect {it.getName()}
 
         parameters.each { p ->
             if (fieldNames.contains(p.getKey())) {
                 def fld = Class.forName(fields.find {it.name = p.getKey()}.clazz.name).getField(p.getKey())
-                exporter.setParameter(fld.get(fld.root.class), p.getValue())
+                // TODO mudou agora não da para colocar os parametros assim mais
+                //exporter.setConfiguration(  )
+                //exporter.setParameter(fld.get(fld.root.class), p.getValue())
             }
         }
     }
@@ -288,21 +419,28 @@ class JasperService {
      * @param exporter , the JRExporter
      * @param format , the target file format
      */
-    private void applyDefaultParameters(JRExporter exporter, JasperExportFormat format) {
+    private void applyDefaultParameters(JRAbstractExporter< ReportExportConfiguration, ExporterConfiguration, ExporterOutput, JRExporterContext > exporter, JasperExportFormat format) {
         switch (format) {
             case JasperExportFormat.HTML_FORMAT:
-            exporter.setParameter(JRHtmlExporterParameter.IS_USING_IMAGES_TO_ALIGN, false)
+                SimpleHtmlReportConfiguration  configuration = new SimpleHtmlReportConfiguration();
+                exporter.setConfiguration( configuration );
+                // Não encontrei esta propriedade mais            
+                // exporter.setParameter(JRHtmlExporterParameter.IS_USING_IMAGES_TO_ALIGN, false)
             break
             case JasperExportFormat.XLS_FORMAT:
-            exporter.setParameter(JRXlsExporterParameter.IS_ONE_PAGE_PER_SHEET, true)
-            exporter.setParameter(JRXlsExporterParameter.IS_AUTO_DETECT_CELL_TYPE, true)
-            exporter.setParameter(JRXlsExporterParameter.IS_WHITE_PAGE_BACKGROUND, false)
-            exporter.setParameter(JRXlsExporterParameter.IS_REMOVE_EMPTY_SPACE_BETWEEN_ROWS, true)
+                SimpleXlsReportConfiguration configuration = new SimpleXlsReportConfiguration();
+                configuration.setOnePagePerSheet( true );
+                configuration.setDetectCellType( true );
+                configuration.setWhitePageBackground( false );
+                configuration.setRemoveEmptySpaceBetweenRows( true );
+                exporter.setConfiguration( configuration );
             break
             case JasperExportFormat.TEXT_FORMAT:
-            exporter.setParameter(JRTextExporterParameter.PAGE_WIDTH, 80)
-            exporter.setParameter(JRTextExporterParameter.PAGE_HEIGHT, 60)
-            exporter.setParameter(JRTextExporterParameter.PAGE_HEIGHT, 60)
+                SimpleTextExporterConfiguration configuration = new SimpleTextExporterConfiguration();                
+                exporter.setConfiguration( configuration );
+//                exporter.setParameter(JRTextExporterParameter.PAGE_WIDTH, 80)
+//                exporter.setParameter(JRTextExporterParameter.PAGE_HEIGHT, 60)
+//                exporter.setParameter(JRTextExporterParameter.PAGE_HEIGHT, 60)
             break
         }
     }

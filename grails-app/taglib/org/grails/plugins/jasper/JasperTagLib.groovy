@@ -14,7 +14,7 @@
  *
  */
 
-package org.codehaus.groovy.grails.plugins.jasper
+package org.grails.plugins.jasper
 
 import org.codehaus.groovy.grails.web.taglib.GroovyPageAttributes;
 

@@ -14,28 +14,22 @@
  *
  */
 
-package org.codehaus.groovy.grails.plugins.jasper
+package org.grails.plugins.jasper
 
 import java.lang.reflect.Field
 
-import net.sf.jasperreports.engine.JRExporter
+import net.sf.jasperreports.engine.JRAbstractExporter
+import net.sf.jasperreports.engine.export.HtmlExporter
 import net.sf.jasperreports.engine.export.JRCsvExporter
-import net.sf.jasperreports.engine.export.JRCsvExporterParameter
-import net.sf.jasperreports.engine.export.JRHtmlExporter
-import net.sf.jasperreports.engine.export.JRHtmlExporterParameter
 import net.sf.jasperreports.engine.export.JRPdfExporter
-import net.sf.jasperreports.engine.export.JRPdfExporterParameter
 import net.sf.jasperreports.engine.export.JRRtfExporter
 import net.sf.jasperreports.engine.export.JRTextExporter
-import net.sf.jasperreports.engine.export.JRTextExporterParameter
 import net.sf.jasperreports.engine.export.JRXlsExporter
-import net.sf.jasperreports.engine.export.JRXlsExporterParameter
 import net.sf.jasperreports.engine.export.JRXmlExporter
-import net.sf.jasperreports.engine.export.JRXmlExporterParameter
+import net.sf.jasperreports.engine.export.JsonExporter
 import net.sf.jasperreports.engine.export.oasis.JROdsExporter
 import net.sf.jasperreports.engine.export.oasis.JROdtExporter
 import net.sf.jasperreports.engine.export.ooxml.JRDocxExporter
-import net.sf.jasperreports.engine.export.ooxml.JRDocxExporterParameter
 import net.sf.jasperreports.engine.export.ooxml.JRPptxExporter
 import net.sf.jasperreports.engine.export.ooxml.JRXlsxExporter
 
@@ -55,7 +49,8 @@ enum JasperExportFormat implements Serializable {
   ODS_FORMAT("application/vnd.oasis.opendocument.spreadsheetl", "ods", false),
   DOCX_FORMAT("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx", false),
   XLSX_FORMAT("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx", false),
-  PPTX_FORMAT("application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx", false)
+  PPTX_FORMAT("application/vnd.openxmlformats-officedocument.presentationml.presentation", "pptx", false),
+  JSON_FORMAT("application/json", "json", true)
 
   String mimeTyp
   String extension
@@ -86,6 +81,7 @@ enum JasperExportFormat implements Serializable {
       case "DOCX": return JasperExportFormat.DOCX_FORMAT
       case "XLSX": return JasperExportFormat.XLSX_FORMAT
       case "PPTX": return JasperExportFormat.PPTX_FORMAT
+      case "JSON": return JasperExportFormat.JSON_FORMAT
       default: throw new Exception(message(code: "jasper.controller.invalidFormat", args: [format]))
     }
   }
@@ -95,10 +91,10 @@ enum JasperExportFormat implements Serializable {
    * @param format
    * @return exporter
    */
-  static JRExporter getExporter(JasperExportFormat format) {
+  static JRAbstractExporter getExporter(JasperExportFormat format) {
     switch (format) {
       case PDF_FORMAT:  return new JRPdfExporter()
-      case HTML_FORMAT: return new JRHtmlExporter()
+      case HTML_FORMAT: return new HtmlExporter()
       case XML_FORMAT:  return new JRXmlExporter()
       case CSV_FORMAT:  return new JRCsvExporter()
       case XLS_FORMAT:  return new JRXlsExporter()
@@ -109,6 +105,7 @@ enum JasperExportFormat implements Serializable {
       case DOCX_FORMAT: return new JRDocxExporter()
       case XLSX_FORMAT: return new JRXlsxExporter()
       case PPTX_FORMAT: return new JRPptxExporter()
+      case JSON_FORMAT: return new JsonExporter()
       default: throw new Exception(message(code: "jasper.controller.invalidFormat", args: [format]))
     }
   }
@@ -120,14 +117,15 @@ enum JasperExportFormat implements Serializable {
    */
   static Field[] getExporterFields(JasperExportFormat format) {
     switch (format) {
-      case PDF_FORMAT:  return JRPdfExporterParameter.getFields()
-      case HTML_FORMAT: return JRHtmlExporterParameter.getFields()
-      case XML_FORMAT:  return JRXmlExporterParameter.getFields()
-      case CSV_FORMAT:  return JRCsvExporterParameter.getFields()
-      case XLS_FORMAT:  return JRXlsExporterParameter.getFields()
-      case XLSX_FORMAT: return JRXlsExporterParameter.getFields()
-      case RTF_FORMAT:  return JRTextExporterParameter.getFields()
-      case DOCX_FORMAT: return JRDocxExporterParameter.getFields()
+      case PDF_FORMAT:  return JRPdfExporter.getProperties()
+      case HTML_FORMAT: return HtmlExporter.getProperties()
+      case XML_FORMAT:  return JRXmlExporter.getProperties()
+      case CSV_FORMAT:  return JRCsvExporter.getProperties()
+      case XLS_FORMAT:  return JRXlsExporter.getProperties()
+      case XLSX_FORMAT: return JRXlsExporter.getProperties()
+      case RTF_FORMAT:  return JRTextExporter.getProperties()
+      case DOCX_FORMAT: return JRDocxExporter.getProperties()
+      case JSON_FORMAT: return JsonExporter.getProperties()
       default: return null
     }
   }

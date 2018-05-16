@@ -14,9 +14,11 @@
  *
  */
 
-package org.codehaus.groovy.grails.plugins.jasper
+package org.grails.plugins.jasper
 
 import javax.servlet.http.HttpSession
+
+import org.grails.plugins.jasper.JasperExportFormat;
 
 import net.sf.jasperreports.engine.JasperPrint
 import net.sf.jasperreports.j2ee.servlets.ImageServlet
