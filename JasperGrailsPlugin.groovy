@@ -1,5 +1,5 @@
 class JasperGrailsPlugin {
-    def version = "1.12.1-SNAPSHOT"
+    def version = "1.12.3-SNAPSHOT"
     def grailsVersion = "2.1.0 > *"
     def author = "Craig Andrews"
     def authorEmail = "candrews@integralblue.com"
@@ -38,4 +38,6 @@ class JasperGrailsPlugin {
             }
         }
     }
+
+
 }

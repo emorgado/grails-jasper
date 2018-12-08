@@ -2,8 +2,13 @@ grails.project.work.dir = 'target'
 
 grails.project.dependency.resolver = 'maven'
 
-grails.project.repos.grailsCentral.username = System.getenv("GRAILS_CENTRAL_USERNAME")
-grails.project.repos.grailsCentral.password = System.getenv("GRAILS_CENTRAL_PASSWORD")
+// grails.project.repos.grailsCentral.username = System.getenv("GRAILS_CENTRAL_USERNAME")
+// grails.project.repos.grailsCentral.password = System.getenv("GRAILS_CENTRAL_PASSWORD")
+
+grails.project.repos.velumsoft.url = "http://velumsoft.com.br:8080/archiva/repository/public"
+grails.project.repos.velumsoft.type = "maven"
+grails.project.repos.velumsoft.username = System.getenv("ARCHIVA_USERNAME")
+grails.project.repos.velumsoft.password = System.getenv("ARCHIVA_USERNAME")
 
 grails.project.dependency.resolution = {
 
@@ -14,13 +19,14 @@ grails.project.dependency.resolution = {
         grailsCentral()
         mavenLocal()
         mavenCentral()
+        mavenRepo "http://jaspersoft.artifactoryonline.com/jaspersoft/third-party-ce-artifacts/"
     }
 
     dependencies {
         compile('com.lowagie:itext:2.1.7')
 
         compile 'net.sf.jasperreports:jasperreports-fonts:6.0.0'
-        compile('net.sf.jasperreports:jasperreports:6.5.1') {
+        compile('net.sf.jasperreports:jasperreports:6.7.0') {
             excludes 'antlr', 'commons-logging',
                      'ant', 'mondrian', 'commons-javaflow','barbecue', 'xml-apis-ext','xml-apis', 'xalan', 'groovy-all', 'hibernate', 'saaj-api', 'servlet-api',
                      'xercesImpl','xmlParserAPIs','spring-core','bsh', 'spring-beans', 'jaxen', 'barcode4j','batik-svg-dom','batik-xml','batik-awt-util','batik-dom',
@@ -43,4 +49,6 @@ grails.project.dependency.resolution = {
             export = false
         }
     }
+
+
 }

@@ -52,11 +52,11 @@ class JasperController {
         }
     }
 
-    private void addJasperPrinterToSession(HttpSession session, JasperPrint jasperPrinter) {
+    protected void addJasperPrinterToSession(HttpSession session, JasperPrint jasperPrinter) {
         session[ImageServlet.DEFAULT_JASPER_PRINT_SESSION_ATTRIBUTE] = jasperPrinter
     }
 
-    private void addImagesURIIfHTMLReport(Map parameters, String contextPath) {
+    protected void addImagesURIIfHTMLReport(Map parameters, String contextPath) {
         if (JasperExportFormat.HTML_FORMAT == JasperExportFormat.determineFileFormat(parameters._format)) {
             parameters.IMAGES_URI = "${contextPath}/reports/image?image="
         }
